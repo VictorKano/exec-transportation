@@ -1,0 +1,35 @@
+# Git
+.git/
+.gitignore
+
+# IDE / Kiro
+.idea/
+.vscode/
+.kiro/
+*.iml
+
+# Maven build output (rebuilt inside Docker)
+target/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment / secrets
+.env
+.env.*
+
+# Docker files themselves (no need to copy into image)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Dev scripts
+start-dev.ps1
+
+# Test resources (not needed at runtime)
+src/test/
