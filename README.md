@@ -1,6 +1,6 @@
 # Executive Transportation Fleet Management System
 
-A Spring Boot REST API for managing executive transportation services. Currently implements user registration and user authentication (login) with Clean Architecture, TDD, and property-based testing.
+A Spring Boot REST API for managing executive transportation services. Currently implements user registration, user authentication (login), and driver registration with Clean Architecture, TDD, and property-based testing.
 
 ## Tech Stack
 
@@ -17,6 +17,8 @@ infrastructure  →  application  →  domain
 - **`domain`** — plain Java classes and interfaces; zero framework dependencies
 - **`application`** — business logic (services, validators, commands, responses); depends only on domain
 - **`infrastructure`** — Spring Boot, JPA, web layer; implements domain/application interfaces
+
+All PII fields (name, email, phone number, CNH) are handled in accordance with Brazil's **LGPD** — never logged, never echoed in error responses, and excluded from responses where not needed.
 
 ## Tech Stack
 
@@ -36,25 +38,27 @@ infrastructure  →  application  →  domain
 src/
 ├── main/java/com/example/fleet/
 │   ├── domain/
-│   │   ├── model/          # User, Claims (plain Java entities/value objects)
-│   │   ├── repository/     # UserRepository (interface)
+│   │   ├── model/          # User, Driver, DriverStatus, Claims (plain Java entities/value objects)
+│   │   ├── repository/     # UserRepository, DriverRepository (interfaces)
 │   │   ├── port/           # PasswordEncoder, TokenProvider (interfaces)
 │   │   └── exception/      # InvalidTokenException
 │   ├── application/
-│   │   ├── command/        # CreateUserCommand, LoginCommand
-│   │   ├── response/       # UserResponse, AuthResponse
-│   │   ├── service/        # UserService, AuthenticationService
-│   │   ├── validator/      # UserValidator, CredentialValidator
-│   │   └── exception/      # ValidationException, DuplicateEmailException, InvalidCredentialsException, InvalidTokenException
+│   │   ├── command/        # CreateUserCommand, LoginCommand, CreateDriverCommand
+│   │   ├── response/       # UserResponse, AuthResponse, DriverResponse
+│   │   ├── service/        # UserService, AuthenticationService, DriverService
+│   │   ├── validator/      # UserValidator, CredentialValidator, DriverValidator
+│   │   └── exception/      # ValidationException, DuplicateEmailException, InvalidCredentialsException,
+│   │                       # InvalidTokenException, UserNotFoundException, DuplicateCnhException
 │   └── infrastructure/
 │       ├── config/         # Spring bean wiring
-│       ├── persistence/    # JPA entity, repository, adapter
+│       ├── persistence/    # JPA entities, repositories, adapters (User + Driver)
 │       ├── security/       # BCryptPasswordEncoderAdapter
-│       └── web/            # UserController, GlobalExceptionHandler, RequestLoggingFilter
+│       └── web/            # UserController, DriverController, GlobalExceptionHandler, RequestLoggingFilter
 └── test/java/com/example/fleet/
     ├── application/        # UserServiceTest, UserValidatorTest, AuthenticationServiceTest,
-    │                       # CredentialValidatorTest + property tests
-    └── infrastructure/     # UserControllerIntegrationTest (Testcontainers)
+    │                       # CredentialValidatorTest, DriverServiceTest, DriverValidatorTest
+    │                       # + property tests for all of the above
+    └── infrastructure/     # UserControllerIntegrationTest, DriverControllerIntegrationTest (Testcontainers)
 ```
 
 ## API Endpoints
@@ -116,6 +120,41 @@ src/
 |---|---|---|
 | Missing / blank email or password | 400 | `{ "error": "<field> is required" }` |
 | Unknown email or wrong password | 401 | `{ "error": "Invalid email or password" }` |
+| Unexpected server error | 500 | `{ "error": "An unexpected error occurred" }` |
+
+### POST /api/v1/drivers — Register Driver
+
+**Authentication:** Required (Bearer JWT)
+
+**Request body:**
+```json
+{
+  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "cnh": "12345678901",
+  "status": "ACTIVE"
+}
+```
+
+**Success — HTTP 201:**
+```json
+{
+  "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "cnh": "12345678901",
+  "status": "ACTIVE"
+}
+```
+
+**Error responses:**
+
+| Scenario | Status | Body |
+|---|---|---|
+| Missing / blank required field | 400 | `{ "error": "<field> is required" }` |
+| Non-alphanumeric CNH | 400 | `{ "error": "cnh must be alphanumeric" }` |
+| CNH longer than 20 characters | 400 | `{ "error": "cnh must be between 1 and 20 characters" }` |
+| Referenced userId does not exist | 404 | `{ "error": "User not found: <userId>" }` |
+| CNH already registered | 409 | `{ "error": "CNH already registered" }` (raw CNH not echoed — LGPD) |
+| No or invalid JWT | 401 | Spring Security default |
 | Unexpected server error | 500 | `{ "error": "An unexpected error occurred" }` |
 
 ## Prerequisites
@@ -186,6 +225,17 @@ CREATE TABLE users (
     CONSTRAINT pk_users PRIMARY KEY (id),
     CONSTRAINT uq_users_email UNIQUE (email)
 );
+
+CREATE TABLE drivers (
+    id         UUID        NOT NULL DEFAULT gen_random_uuid(),
+    user_id    UUID        NOT NULL,
+    cnh        VARCHAR(20) NOT NULL,  -- PII: LGPD personal data
+    status     VARCHAR(20) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT pk_drivers         PRIMARY KEY (id),
+    CONSTRAINT uq_drivers_cnh     UNIQUE (cnh),
+    CONSTRAINT fk_drivers_user_id FOREIGN KEY (user_id) REFERENCES users(id)
+);
 ```
 
 ## Testing Strategy
@@ -199,6 +249,9 @@ CREATE TABLE users (
 | `JwtTokenProvider` | Property-based | JUnit 5 + jqwik |
 | `POST /api/v1/users` | Integration | Spring Boot Test + MockMvc + Testcontainers |
 | `POST /api/v1/auth/login` | Integration | Spring Boot Test + MockMvc + Testcontainers |
+| `DriverValidator` | Unit + property-based | JUnit 5 + jqwik |
+| `DriverService` | Unit + property-based | JUnit 5 + Mockito + jqwik |
+| `POST /api/v1/drivers` | Integration | Spring Boot Test + MockMvc + Testcontainers |
 
 **Correctness properties verified (create-user):**
 1. Valid registration always returns all required public fields
@@ -219,9 +272,22 @@ CREATE TABLE users (
 6. Unknown email always causes authentication failure
 7. Wrong password always causes authentication failure
 
+**Correctness properties verified (create-driver):**
+1. Blank or null CNH is always rejected by `DriverValidator`
+2. Non-alphanumeric CNH is always rejected by `DriverValidator`
+3. Out-of-range CNH length (0 or > 20 chars) is always rejected by `DriverValidator`
+4. Null userId is always rejected by `DriverValidator`
+5. Null status is always rejected by `DriverValidator`
+6. Unknown userId always throws `UserNotFoundException`; `save` is never called
+7. Duplicate CNH always throws `DuplicateCnhException`; `save` is never called
+8. Valid command always produces a `DriverResponse` with matching `userId`, `cnh`, and `status`
+9. Two valid commands with different CNHs always produce different UUIDs
+10. Validation failure always prevents `UserRepository` and `DriverRepository` calls
+
 ## Security Notes
 
 - Passwords are hashed with **BCrypt** before persistence — plain text is never stored or logged
 - The `hashedPassword` field is excluded from all API responses
+- CNH (driver license number) is treated as PII under Brazil's LGPD — never logged, never echoed in error responses
 - Request logging captures HTTP method and path only — request bodies are never logged
 - Unexpected errors return a generic message with no internal details exposed

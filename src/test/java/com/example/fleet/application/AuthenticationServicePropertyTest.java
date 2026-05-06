@@ -135,6 +135,12 @@ class AuthenticationServicePropertyTest {
         Assume.that(!safeToken.contains(password));
         when(tokenProvider.generate(userId, email)).thenReturn(safeToken);
 
+        // Skip samples where the password is a natural substring of the userId UUID string.
+        // UUIDs always contain hyphens and hex digits; a password like "-" would trivially
+        // appear in any UUID. We are testing that the service does not LEAK the password,
+        // not that UUID strings never share characters with arbitrary passwords.
+        Assume.that(!userId.toString().contains(password));
+
         // Mock: validator does nothing (no-op) — inputs are already valid
         doNothing().when(credentialValidator).validate(any(LoginCommand.class));
 

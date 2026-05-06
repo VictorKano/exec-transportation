@@ -1,7 +1,9 @@
 package com.example.fleet.infrastructure.web;
 
+import com.example.fleet.application.exception.DuplicateCnhException;
 import com.example.fleet.application.exception.DuplicateEmailException;
 import com.example.fleet.application.exception.InvalidCredentialsException;
+import com.example.fleet.application.exception.UserNotFoundException;
 import com.example.fleet.application.exception.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +56,38 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles user not found errors when a referenced userId does not exist.
+     * Maps to HTTP 404.
+     *
+     * Requirements: 9.4
+     */
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleUserNotFoundException(UserNotFoundException ex) {
+        logger.warn("User not found: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Handles duplicate CNH registration attempts.
+     * Maps to HTTP 409 (Conflict).
+     *
+     * LGPD compliance: the raw CNH value is NOT logged and NOT echoed in the response body.
+     * A generic message is returned to avoid exposing PII.
+     *
+     * Requirements: 9.5, 10.1, 10.4
+     */
+    @ExceptionHandler(DuplicateCnhException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateCnhException(DuplicateCnhException ex) {
+        // LGPD: do NOT log the CNH value — log a generic message only
+        logger.warn("Duplicate CNH registration attempt");
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(Map.of("error", "CNH already registered"));
     }
 
     /**

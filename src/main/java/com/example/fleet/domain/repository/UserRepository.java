@@ -3,6 +3,7 @@ package com.example.fleet.domain.repository;
 import com.example.fleet.domain.model.User;
 
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Domain repository interface for User persistence.
@@ -33,4 +34,12 @@ public interface UserRepository {
      * @return an {@link Optional} containing the user if found, or empty if no user has that email
      */
     Optional<User> findByEmail(String email);
+
+    /**
+     * Finds a user by their unique identifier.
+     *
+     * @param id the UUID of the user to look up
+     * @return an {@link Optional} containing the user if found, or empty if no user has that id
+     */
+    Optional<User> findById(UUID id);
 }

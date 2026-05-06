@@ -5,6 +5,7 @@ import com.example.fleet.domain.repository.UserRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Infrastructure adapter implementing the domain UserRepository interface.
@@ -51,6 +52,18 @@ public class UserRepositoryAdapter implements UserRepository {
     @Override
     public Optional<User> findByEmail(String email) {
         return jpaRepository.findByEmail(email)
+                .map(entity -> new User(
+                        entity.getId(),
+                        entity.getName(),
+                        entity.getEmail(),
+                        entity.getHashedPassword(),
+                        entity.getPhoneNumber()
+                ));
+    }
+
+    @Override
+    public Optional<User> findById(UUID id) {
+        return jpaRepository.findById(id)
                 .map(entity -> new User(
                         entity.getId(),
                         entity.getName(),

@@ -40,6 +40,11 @@ class UserServicePropertyTest {
             public java.util.Optional<User> findByEmail(String email) {
                 return java.util.Optional.empty();
             }
+
+            @Override
+            public java.util.Optional<User> findById(java.util.UUID id) {
+                return java.util.Optional.empty();
+            }
         };
 
         // Stub: returns "hashed_" + rawPassword
@@ -255,6 +260,11 @@ class UserServicePropertyTest {
             public java.util.Optional<User> findByEmail(String emailArg) {
                 return java.util.Optional.empty();
             }
+
+            @Override
+            public java.util.Optional<User> findById(java.util.UUID id) {
+                return java.util.Optional.empty();
+            }
         };
 
         PasswordEncoder passwordEncoder = new PasswordEncoder() {
@@ -337,6 +347,11 @@ class UserServicePropertyTest {
 
             @Override
             public java.util.Optional<User> findByEmail(String emailArg) {
+                return java.util.Optional.empty();
+            }
+
+            @Override
+            public java.util.Optional<User> findById(java.util.UUID id) {
                 return java.util.Optional.empty();
             }
         };
