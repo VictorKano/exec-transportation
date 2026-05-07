@@ -1,6 +1,6 @@
 # Executive Transportation Fleet Management System
 
-A Spring Boot REST API for managing executive transportation services. Currently implements user registration, user authentication (login), and driver registration with Clean Architecture, TDD, and property-based testing.
+A Spring Boot REST API for managing executive transportation services. Currently implements user registration, user authentication (login), driver registration, and vehicle registration with Clean Architecture, TDD, and property-based testing.
 
 ## Tech Stack
 
@@ -39,27 +39,31 @@ All PII fields (name, email, phone number, CNH) are handled in accordance with B
 src/
 ├── main/java/com/example/fleet/
 │   ├── domain/
-│   │   ├── model/          # User, Driver, DriverStatus, Claims (plain Java entities/value objects)
-│   │   ├── repository/     # UserRepository, DriverRepository (interfaces)
+│   │   ├── model/          # User, Driver, DriverStatus, Vehicle, Claims (plain Java entities/value objects)
+│   │   ├── repository/     # UserRepository, DriverRepository, VehicleRepository (interfaces)
 │   │   ├── port/           # PasswordEncoder, TokenProvider (interfaces)
 │   │   └── exception/      # InvalidTokenException
 │   ├── application/
-│   │   ├── command/        # CreateUserCommand, LoginCommand, CreateDriverCommand
-│   │   ├── response/       # UserResponse, AuthResponse, DriverResponse
-│   │   ├── service/        # UserService, AuthenticationService, DriverService
-│   │   ├── validator/      # UserValidator, CredentialValidator, DriverValidator
+│   │   ├── command/        # CreateUserCommand, LoginCommand, CreateDriverCommand, CreateVehicleCommand
+│   │   ├── response/       # UserResponse, AuthResponse, DriverResponse, VehicleResponse
+│   │   ├── service/        # UserService, AuthenticationService, DriverService, VehicleService
+│   │   ├── validator/      # UserValidator, CredentialValidator, DriverValidator, VehicleValidator
 │   │   └── exception/      # ValidationException, DuplicateEmailException, InvalidCredentialsException,
-│   │                       # InvalidTokenException, UserNotFoundException, DuplicateCnhException
+│   │                       # InvalidTokenException, UserNotFoundException, DuplicateCnhException,
+│   │                       # DuplicatePlateException, DriverNotFoundException
 │   └── infrastructure/
 │       ├── config/         # Spring bean wiring (ApplicationConfig, SecurityConfig, OpenApiConfig)
-│       ├── persistence/    # JPA entities, repositories, adapters (User + Driver)
+│       ├── persistence/    # JPA entities, repositories, adapters (User + Driver + Vehicle)
 │       ├── security/       # BCryptPasswordEncoderAdapter
-│       └── web/            # UserController, DriverController, GlobalExceptionHandler, RequestLoggingFilter
+│       └── web/            # UserController, DriverController, VehicleController,
+│                           # GlobalExceptionHandler, RequestLoggingFilter
 └── test/java/com/example/fleet/
     ├── application/        # UserServiceTest, UserValidatorTest, AuthenticationServiceTest,
-    │                       # CredentialValidatorTest, DriverServiceTest, DriverValidatorTest
-    │                       # + property tests for all of the above
-    └── infrastructure/     # UserControllerIntegrationTest, DriverControllerIntegrationTest (Testcontainers)
+    │                       # CredentialValidatorTest, DriverServiceTest, DriverValidatorTest,
+    │                       # VehicleServiceTest, VehicleValidatorTest
+    │                       # + property tests for all of the above (incl. VehicleServicePropertyTest)
+    └── infrastructure/     # UserControllerIntegrationTest, DriverControllerIntegrationTest,
+                            # VehicleControllerIntegrationTest (Testcontainers)
 ```
 
 ## API Endpoints
@@ -158,6 +162,47 @@ src/
 | No or invalid JWT | 401 | Spring Security default |
 | Unexpected server error | 500 | `{ "error": "An unexpected error occurred" }` |
 
+### POST /api/v1/vehicles — Register Vehicle
+
+**Authentication:** Required (Bearer JWT)
+
+**Request body:**
+```json
+{
+  "plate": "ABC1D23",
+  "brand": "Toyota",
+  "model": "Corolla",
+  "year": 2022,
+  "driverId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+}
+```
+
+`driverId` is optional — omit it to register a vehicle without an assigned driver.
+
+**Success — HTTP 201:**
+```json
+{
+  "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "plate": "ABC1D23",
+  "brand": "Toyota",
+  "model": "Corolla",
+  "year": 2022,
+  "driverId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+}
+```
+
+**Error responses:**
+
+| Scenario | Status | Body |
+|---|---|---|
+| Missing / blank required field | 400 | `{ "error": "<field> is required" }` |
+| Year before 1886 | 400 | `{ "error": "year must be 1886 or later" }` |
+| Year after current year + 1 | 400 | `{ "error": "year must not exceed current year + 1" }` |
+| Plate already registered | 409 | `{ "error": "Plate already registered" }` |
+| Referenced driverId does not exist | 404 | `{ "error": "Driver not found: <driverId>" }` |
+| No or invalid JWT | 401 | Spring Security default |
+| Unexpected server error | 500 | `{ "error": "An unexpected error occurred" }` |
+
 ## Prerequisites
 
 - Java 17+
@@ -237,6 +282,19 @@ CREATE TABLE drivers (
     CONSTRAINT uq_drivers_cnh     UNIQUE (cnh),
     CONSTRAINT fk_drivers_user_id FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+CREATE TABLE vehicles (
+    id         UUID         NOT NULL DEFAULT gen_random_uuid(),
+    plate      VARCHAR(20)  NOT NULL,
+    brand      VARCHAR(100) NOT NULL,
+    model      VARCHAR(100) NOT NULL,
+    year       INT          NOT NULL,
+    driver_id  UUID,
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT pk_vehicles           PRIMARY KEY (id),
+    CONSTRAINT uq_vehicles_plate     UNIQUE (plate),
+    CONSTRAINT fk_vehicles_driver_id FOREIGN KEY (driver_id) REFERENCES drivers(id)
+);
 ```
 
 ## Testing Strategy
@@ -254,6 +312,9 @@ CREATE TABLE drivers (
 | `DriverService` | Unit + property-based | JUnit 5 + Mockito + jqwik |
 | `POST /api/v1/drivers` | Integration | Spring Boot Test + MockMvc + Testcontainers |
 | OpenAPI / Swagger UI | Integration | Spring Boot Test + MockMvc + Testcontainers |
+| `VehicleValidator` | Unit + property-based | JUnit 5 + jqwik |
+| `VehicleService` | Unit + property-based | JUnit 5 + Mockito + jqwik |
+| `POST /api/v1/vehicles` | Integration | Spring Boot Test + MockMvc + Testcontainers |
 
 **Correctness properties verified (create-user):**
 1. Valid registration always returns all required public fields
@@ -285,6 +346,17 @@ CREATE TABLE drivers (
 8. Valid command always produces a `DriverResponse` with matching `userId`, `cnh`, and `status`
 9. Two valid commands with different CNHs always produce different UUIDs
 10. Validation failure always prevents `UserRepository` and `DriverRepository` calls
+
+**Correctness properties verified (create-vehicle):**
+1. Valid command always produces a `VehicleResponse` with all fields matching the command and a non-null `id`
+2. Two valid commands with different plates always produce different UUIDs
+3. Blank required fields (plate, brand, model) are always rejected with the appropriate `"<field> is required"` message
+4. Duplicate plate always throws `DuplicatePlateException`; `save` is never called
+5. Unknown `driverId` always throws `DriverNotFoundException`; `save` is never called
+6. Year below 1886 is always rejected with `"year must be 1886 or later"`
+7. Year above current year + 1 is always rejected with `"year must not exceed current year + 1"`
+8. Year in the valid range [1886, currentYear + 1] is always accepted
+9. Validation failure always prevents all repository calls (`existsByPlate` and `save`)
 
 ## Security Notes
 

@@ -1,7 +1,9 @@
 package com.example.fleet.infrastructure.web;
 
+import com.example.fleet.application.exception.DriverNotFoundException;
 import com.example.fleet.application.exception.DuplicateCnhException;
 import com.example.fleet.application.exception.DuplicateEmailException;
+import com.example.fleet.application.exception.DuplicatePlateException;
 import com.example.fleet.application.exception.InvalidCredentialsException;
 import com.example.fleet.application.exception.UserNotFoundException;
 import com.example.fleet.application.exception.ValidationException;
@@ -153,6 +155,36 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("error", "Invalid email or password"));
+    }
+
+    /**
+     * Handles duplicate plate registration attempts.
+     * Maps to HTTP 409 (Conflict).
+     *
+     * The plate value is NOT logged to avoid leaking business identifiers in logs.
+     *
+     * Requirements: 6.4
+     */
+    @ExceptionHandler(DuplicatePlateException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicatePlateException(DuplicatePlateException ex) {
+        logger.warn("Duplicate plate registration attempt");
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(Map.of("error", "Plate already registered"));
+    }
+
+    /**
+     * Handles driver not found errors when a referenced driverId does not exist.
+     * Maps to HTTP 404.
+     *
+     * Requirements: 6.5
+     */
+    @ExceptionHandler(DriverNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleDriverNotFoundException(DriverNotFoundException ex) {
+        logger.warn("Driver not found: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", ex.getMessage()));
     }
 
     /**

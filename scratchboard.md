@@ -1,5 +1,40 @@
 # Scratchboard
 
+## Feature: create-vehicle
+
+### Status
+- [x] Requirements document created: `.kiro/specs/create-vehicle/requirements.md`
+- [x] Design document: `.kiro/specs/create-vehicle/design.md`
+- [x] Tasks: `.kiro/specs/create-vehicle/tasks.md`
+
+---
+
+### Domain Modeling Decision: Vehicle
+
+**Vehicle** is a standalone aggregate with an optional FK reference to `Driver` (by UUID).
+
+**Domain model shape:**
+```java
+public class Vehicle {
+    private final UUID id;
+    private final String plate;
+    private final String brand;
+    private final String model;
+    private final int year;
+    private final UUID driverId;   // nullable — optional assignment
+}
+```
+
+**Key design notes:**
+- `plate` uniqueness enforced at application layer via `VehicleRepository.existsByPlate(plate)`.
+- `driverId` is optional: null means unassigned. When provided, `DriverRepository.findById` is called to verify the driver exists.
+- `year` validation: 1886 (first automobile) to current year + 1 (pre-orders).
+- New exceptions needed: `DuplicatePlateException`, `DriverNotFoundException`.
+- New endpoint: `POST /api/v1/vehicles` → HTTP 201 on success.
+- Follows the same Clean Architecture layering as `create-driver`.
+
+---
+
 ## Feature: create-driver
 
 ### Status

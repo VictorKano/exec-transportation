@@ -3,13 +3,16 @@ package com.example.fleet.infrastructure.config;
 import com.example.fleet.application.service.AuthenticationService;
 import com.example.fleet.application.service.DriverService;
 import com.example.fleet.application.service.UserService;
+import com.example.fleet.application.service.VehicleService;
 import com.example.fleet.application.validator.CredentialValidator;
 import com.example.fleet.application.validator.DriverValidator;
 import com.example.fleet.application.validator.UserValidator;
+import com.example.fleet.application.validator.VehicleValidator;
 import com.example.fleet.domain.port.PasswordEncoder;
 import com.example.fleet.domain.port.TokenProvider;
 import com.example.fleet.domain.repository.DriverRepository;
 import com.example.fleet.domain.repository.UserRepository;
+import com.example.fleet.domain.repository.VehicleRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -57,5 +60,17 @@ public class ApplicationConfig {
                                                        TokenProvider tokenProvider,
                                                        CredentialValidator credentialValidator) {
         return new AuthenticationService(userRepository, passwordEncoder, tokenProvider, credentialValidator);
+    }
+
+    @Bean
+    public VehicleValidator vehicleValidator() {
+        return new VehicleValidator();
+    }
+
+    @Bean
+    public VehicleService vehicleService(VehicleRepository vehicleRepository,
+                                         DriverRepository driverRepository,
+                                         VehicleValidator vehicleValidator) {
+        return new VehicleService(vehicleRepository, driverRepository, vehicleValidator);
     }
 }

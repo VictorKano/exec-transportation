@@ -25,3 +25,17 @@ CREATE TABLE IF NOT EXISTS drivers (
     CONSTRAINT uq_drivers_cnh      UNIQUE (cnh),
     CONSTRAINT fk_drivers_user_id  FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+-- vehicles table
+CREATE TABLE IF NOT EXISTS vehicles (
+    id         UUID         NOT NULL DEFAULT gen_random_uuid(),
+    plate      VARCHAR(20)  NOT NULL,
+    brand      VARCHAR(100) NOT NULL,
+    model      VARCHAR(100) NOT NULL,
+    year       INT          NOT NULL,
+    driver_id  UUID,
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    CONSTRAINT pk_vehicles           PRIMARY KEY (id),
+    CONSTRAINT uq_vehicles_plate     UNIQUE (plate),
+    CONSTRAINT fk_vehicles_driver_id FOREIGN KEY (driver_id) REFERENCES drivers(id)
+);
