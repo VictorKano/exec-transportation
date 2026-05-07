@@ -3,6 +3,10 @@ package com.example.fleet.infrastructure.web;
 import com.example.fleet.application.command.CreateDriverCommand;
 import com.example.fleet.application.response.DriverResponse;
 import com.example.fleet.application.service.DriverService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * Requirements: 9.1, 9.2
  */
+@Tag(name = "Drivers")
 @RestController
 @RequestMapping("/api/v1/drivers")
 public class DriverController {
@@ -36,6 +41,12 @@ public class DriverController {
      * @param request the driver registration request containing userId, cnh, and status
      * @return HTTP 201 with the created driver's fields (id, userId, cnh, status)
      */
+    @Operation(summary = "Create a new driver profile linked to an existing user")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Driver created successfully"),
+        @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token"),
+        @ApiResponse(responseCode = "409", description = "A driver with the given CNH already exists")
+    })
     @PostMapping
     public ResponseEntity<DriverResponse> createDriver(@Valid @RequestBody CreateDriverRequest request) {
         // Map web DTO to application command

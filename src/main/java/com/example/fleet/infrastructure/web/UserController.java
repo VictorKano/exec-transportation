@@ -3,6 +3,10 @@ package com.example.fleet.infrastructure.web;
 import com.example.fleet.application.command.CreateUserCommand;
 import com.example.fleet.application.response.UserResponse;
 import com.example.fleet.application.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
  * REST controller for user management endpoints.
  * Exposes POST /api/v1/users for user registration.
  *
- * Requirements: 1.1, 1.2, 1.3, 5.3
+ * Requirements: 1.1, 1.2, 1.3, 5.2, 5.5
  */
+@Tag(name = "Users")
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
@@ -33,6 +38,11 @@ public class UserController {
      * @param request the user registration request containing name, email, password, and phoneNumber
      * @return HTTP 201 with the created user's public fields (id, name, email, phoneNumber)
      */
+    @Operation(summary = "Create a new user account")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "User created successfully"),
+        @ApiResponse(responseCode = "409", description = "A user with the given email already exists")
+    })
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         // Map web DTO to application command

@@ -5,6 +5,9 @@ import com.example.fleet.application.exception.DuplicateEmailException;
 import com.example.fleet.application.exception.InvalidCredentialsException;
 import com.example.fleet.application.exception.UserNotFoundException;
 import com.example.fleet.application.exception.ValidationException;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -30,6 +33,14 @@ public class GlobalExceptionHandler {
      * Handles Bean Validation failures from @Valid annotations.
      * Maps to HTTP 400 with the first field error message.
      */
+    @ApiResponse(
+        responseCode = "400",
+        description = "Validation failed — the request body contains invalid or missing fields",
+        content = @Content(
+            mediaType = "application/json",
+            schema = @Schema(example = "{\"error\": \"Field error message\"}")
+        )
+    )
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex) {
@@ -81,6 +92,14 @@ public class GlobalExceptionHandler {
      *
      * Requirements: 9.5, 10.1, 10.4
      */
+    @ApiResponse(
+        responseCode = "409",
+        description = "Conflict — the CNH is already registered",
+        content = @Content(
+            mediaType = "application/json",
+            schema = @Schema(example = "{\"error\": \"CNH already registered\"}")
+        )
+    )
     @ExceptionHandler(DuplicateCnhException.class)
     public ResponseEntity<Map<String, String>> handleDuplicateCnhException(DuplicateCnhException ex) {
         // LGPD: do NOT log the CNH value — log a generic message only
@@ -94,6 +113,14 @@ public class GlobalExceptionHandler {
      * Handles duplicate email registration attempts.
      * Maps to HTTP 409 (Conflict).
      */
+    @ApiResponse(
+        responseCode = "409",
+        description = "Conflict — the email address is already registered",
+        content = @Content(
+            mediaType = "application/json",
+            schema = @Schema(example = "{\"error\": \"Email already registered\"}")
+        )
+    )
     @ExceptionHandler(DuplicateEmailException.class)
     public ResponseEntity<Map<String, String>> handleDuplicateEmailException(
             DuplicateEmailException ex) {
@@ -111,6 +138,14 @@ public class GlobalExceptionHandler {
      *
      * Requirements: 3.3, 7.1, 7.4
      */
+    @ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized — the provided credentials are invalid",
+        content = @Content(
+            mediaType = "application/json",
+            schema = @Schema(example = "{\"error\": \"Invalid email or password\"}")
+        )
+    )
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<Map<String, String>> handleInvalidCredentialsException(
             InvalidCredentialsException ex) {
@@ -125,6 +160,14 @@ public class GlobalExceptionHandler {
      * Maps to HTTP 500 with a generic message (no internal details exposed).
      * Logs the full exception with stack trace at ERROR level.
      */
+    @ApiResponse(
+        responseCode = "500",
+        description = "Internal Server Error — an unexpected error occurred",
+        content = @Content(
+            mediaType = "application/json",
+            schema = @Schema(example = "{\"error\": \"An unexpected error occurred\"}")
+        )
+    )
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
         logger.error("Unexpected error occurred", ex);

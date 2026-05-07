@@ -27,6 +27,7 @@ All PII fields (name, email, phone number, CNH) are handled in accordance with B
 - **Spring Data JPA** — persistence layer
 - **Spring Security** — BCrypt password hashing
 - **JJWT 0.12.6** — JWT generation and validation (infrastructure layer only)
+- **Springdoc OpenAPI 2.5.0** — auto-generated OpenAPI 3.0 spec and Swagger UI (`/swagger-ui/index.html`, `/v3/api-docs`)
 - **Jakarta Validation** — request validation
 - **jqwik 1.8.5** — property-based testing
 - **Testcontainers** — integration tests with real PostgreSQL
@@ -50,7 +51,7 @@ src/
 │   │   └── exception/      # ValidationException, DuplicateEmailException, InvalidCredentialsException,
 │   │                       # InvalidTokenException, UserNotFoundException, DuplicateCnhException
 │   └── infrastructure/
-│       ├── config/         # Spring bean wiring
+│       ├── config/         # Spring bean wiring (ApplicationConfig, SecurityConfig, OpenApiConfig)
 │       ├── persistence/    # JPA entities, repositories, adapters (User + Driver)
 │       ├── security/       # BCryptPasswordEncoderAdapter
 │       └── web/            # UserController, DriverController, GlobalExceptionHandler, RequestLoggingFilter
@@ -252,6 +253,7 @@ CREATE TABLE drivers (
 | `DriverValidator` | Unit + property-based | JUnit 5 + jqwik |
 | `DriverService` | Unit + property-based | JUnit 5 + Mockito + jqwik |
 | `POST /api/v1/drivers` | Integration | Spring Boot Test + MockMvc + Testcontainers |
+| OpenAPI / Swagger UI | Integration | Spring Boot Test + MockMvc + Testcontainers |
 
 **Correctness properties verified (create-user):**
 1. Valid registration always returns all required public fields
