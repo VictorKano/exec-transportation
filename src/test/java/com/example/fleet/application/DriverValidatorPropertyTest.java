@@ -4,7 +4,13 @@ import com.example.fleet.application.command.CreateDriverCommand;
 import com.example.fleet.application.exception.ValidationException;
 import com.example.fleet.application.validator.DriverValidator;
 import com.example.fleet.domain.model.DriverStatus;
-import net.jqwik.api.*;
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
+import net.jqwik.api.Combinators;
+import net.jqwik.api.ForAll;
+import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
+import net.jqwik.api.Tag;
 import net.jqwik.api.lifecycle.BeforeProperty;
 
 import java.util.UUID;

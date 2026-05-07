@@ -9,7 +9,14 @@ import com.example.fleet.domain.model.User;
 import com.example.fleet.domain.port.PasswordEncoder;
 import com.example.fleet.domain.port.TokenProvider;
 import com.example.fleet.domain.repository.UserRepository;
-import net.jqwik.api.*;
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
+import net.jqwik.api.Assume;
+import net.jqwik.api.Combinators;
+import net.jqwik.api.ForAll;
+import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
+import net.jqwik.api.Tag;
 import net.jqwik.api.lifecycle.BeforeProperty;
 import org.mockito.Mockito;
 
@@ -19,7 +26,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Property-based tests for {@link AuthenticationService}.

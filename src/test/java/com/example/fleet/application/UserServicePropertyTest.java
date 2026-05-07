@@ -7,7 +7,13 @@ import com.example.fleet.application.validator.UserValidator;
 import com.example.fleet.domain.model.User;
 import com.example.fleet.domain.port.PasswordEncoder;
 import com.example.fleet.domain.repository.UserRepository;
-import net.jqwik.api.*;
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
+import net.jqwik.api.Combinators;
+import net.jqwik.api.ForAll;
+import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
+import net.jqwik.api.Tag;
 import net.jqwik.api.lifecycle.BeforeProperty;
 
 import static org.assertj.core.api.Assertions.assertThat;

@@ -12,8 +12,13 @@ import com.example.fleet.domain.model.DriverStatus;
 import com.example.fleet.domain.model.User;
 import com.example.fleet.domain.repository.DriverRepository;
 import com.example.fleet.domain.repository.UserRepository;
-import net.jqwik.api.*;
-import net.jqwik.api.lifecycle.BeforeProperty;
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
+import net.jqwik.api.Assume;
+import net.jqwik.api.ForAll;
+import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
+import net.jqwik.api.Tag;
 
 import java.util.Optional;
 import java.util.UUID;

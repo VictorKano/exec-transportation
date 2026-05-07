@@ -3,7 +3,14 @@ package com.example.fleet.application;
 import com.example.fleet.application.command.CreateUserCommand;
 import com.example.fleet.application.exception.ValidationException;
 import com.example.fleet.application.validator.UserValidator;
-import net.jqwik.api.*;
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
+import net.jqwik.api.Assume;
+import net.jqwik.api.Combinators;
+import net.jqwik.api.ForAll;
+import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
+import net.jqwik.api.Tag;
 import net.jqwik.api.lifecycle.BeforeProperty;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
